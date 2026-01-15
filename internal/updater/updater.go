@@ -13,6 +13,34 @@ import (
 	"strings"
 	"time"
 )
+func isGitRepo() bool {
+	_, err := os.Stat(".git")
+	return err == nil
+}
+
+func gitPull() error {
+	cmd := exec.Command("git", "pull")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func goBuildLocal() error {
+	cmd := exec.Command("go", "build", "-o", "devdoctor.exe", "./cmd/devdoctor")
+	if runtime.GOOS != "windows" {
+		cmd = exec.Command("go", "build", "-o", "devdoctor", "./cmd/devdoctor")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func installGlobal() error {
+	cmd := exec.Command("go", "install", "./cmd/devdoctor")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
 
 const RepoOwner = "Sw3bbl3"
 const RepoName = "devdoctor"
@@ -190,6 +218,26 @@ func downloadWithProgress(url, outPath string) error {
 }
 
 func UpdateToLatest(currentVersion string) (string, error) {
+	if isGitRepo() {
+		fmt.Println("[INFO] Detected local git repository. Pulling latest changes...")
+		if err := gitPull(); err != nil {
+			return "", fmt.Errorf("git pull failed: %w", err)
+		}
+		fmt.Println("[INFO] Building latest devdoctor...")
+		if err := goBuildLocal(); err != nil {
+			return "", fmt.Errorf("go build failed: %w", err)
+		}
+		fmt.Println("[INFO] Installing globally...")
+		if err := installGlobal(); err != nil {
+			return "", fmt.Errorf("go install failed: %w", err)
+		}
+		dest, derr := destinationPath()
+		if derr != nil {
+			return "", derr
+		}
+		return dest, nil
+	}
+
 	gr, err := latestRelease()
 	if err != nil {
 		// Fallback: install from source
