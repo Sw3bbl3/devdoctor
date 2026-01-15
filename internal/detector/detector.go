@@ -25,16 +25,127 @@ func NewDetectorRegistry() *DetectorRegistry {
 }
 
 func (r *DetectorRegistry) registerDetectors() {
-	r.detectors = []func(string) *ProjectType{
-		detectNodeJS,
-		detectPython,
-		detectGo,
-		detectJava,
-		detectRuby,
-		detectRust,
-		detectDotNet,
-		detectDocker,
-	}
+   r.detectors = []func(string) *ProjectType{
+	   detectNodeJS,
+	   detectPython,
+	   detectGo,
+	   detectJava,
+	   detectRuby,
+	   detectRust,
+	   detectDotNet,
+	   detectDocker,
+	   detectPHP,
+	   detectC,
+	   detectCpp,
+	   detectSwift,
+	   detectKotlin,
+	   detectElixir,
+	   detectHaskell,
+	   detectScala,
+	   detectDartFlutter,
+   }
+func detectPHP(path string) *ProjectType {
+   if fileExists(path, "composer.json") {
+	   return &ProjectType{
+		   Name:          "PHP",
+		   ConfigFiles:   []string{"composer.json"},
+		   RequiredTools: []string{"php", "composer"},
+	   }
+   }
+   return nil
+}
+
+func detectC(path string) *ProjectType {
+   if fileExists(path, "Makefile") || fileExists(path, "CMakeLists.txt") {
+	   return &ProjectType{
+		   Name:          "C",
+		   ConfigFiles:   []string{"Makefile", "CMakeLists.txt"},
+		   RequiredTools: []string{"gcc", "make"},
+	   }
+   }
+   return nil
+}
+
+func detectCpp(path string) *ProjectType {
+   if fileExists(path, "CMakeLists.txt") || fileExists(path, "Makefile") {
+	   return &ProjectType{
+		   Name:          "C++",
+		   ConfigFiles:   []string{"CMakeLists.txt", "Makefile"},
+		   RequiredTools: []string{"g++", "make"},
+	   }
+   }
+   return nil
+}
+
+func detectSwift(path string) *ProjectType {
+   if fileExists(path, "Package.swift") {
+	   return &ProjectType{
+		   Name:          "Swift",
+		   ConfigFiles:   []string{"Package.swift"},
+		   RequiredTools: []string{"swift"},
+	   }
+   }
+   return nil
+}
+
+func detectKotlin(path string) *ProjectType {
+   if fileExists(path, "build.gradle.kts") || fileExists(path, "settings.gradle.kts") {
+	   return &ProjectType{
+		   Name:          "Kotlin",
+		   ConfigFiles:   []string{"build.gradle.kts", "settings.gradle.kts"},
+		   RequiredTools: []string{"kotlin", "gradle"},
+	   }
+   }
+   return nil
+}
+
+func detectElixir(path string) *ProjectType {
+   if fileExists(path, "mix.exs") {
+	   return &ProjectType{
+		   Name:          "Elixir",
+		   ConfigFiles:   []string{"mix.exs"},
+		   RequiredTools: []string{"elixir", "mix"},
+	   }
+   }
+   return nil
+}
+
+func detectHaskell(path string) *ProjectType {
+   if fileExists(path, "stack.yaml") || fileExists(path, "cabal.project") {
+	   return &ProjectType{
+		   Name:          "Haskell",
+		   ConfigFiles:   []string{"stack.yaml", "cabal.project"},
+		   RequiredTools: []string{"ghc", "stack", "cabal"},
+	   }
+   }
+   return nil
+}
+
+func detectScala(path string) *ProjectType {
+   if fileExists(path, "build.sbt") {
+	   return &ProjectType{
+		   Name:          "Scala",
+		   ConfigFiles:   []string{"build.sbt"},
+		   RequiredTools: []string{"scala", "sbt"},
+	   }
+   }
+   return nil
+}
+
+func detectDartFlutter(path string) *ProjectType {
+   if fileExists(path, "pubspec.yaml") {
+	   tools := []string{"dart"}
+	   if fileExists(path, ".metadata") {
+		   tools = append(tools, "flutter")
+	   }
+	   return &ProjectType{
+		   Name:          "Dart/Flutter",
+		   ConfigFiles:   []string{"pubspec.yaml"},
+		   RequiredTools: tools,
+	   }
+   }
+   return nil
+}
 }
 
 // Detect scans the directory and returns all detected project types

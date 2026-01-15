@@ -10,6 +10,8 @@ import (
 	"github.com/Sw3bbl3/devdoctor/internal/detector"
 	"github.com/Sw3bbl3/devdoctor/internal/reporter"
 	"github.com/Sw3bbl3/devdoctor/internal/updater"
+	"github.com/Sw3bbl3/devdoctor/internal/envcheck"
+	"github.com/Sw3bbl3/devdoctor/internal/plugin"
 )
 
 const version = "0.1.0"
@@ -24,6 +26,35 @@ func main() {
 	flag.BoolVar(&update, "update", false, "Update DevDoctor to the latest release")
 	flag.BoolVar(&checkUpdate, "check-update", false, "Check if a newer version is available")
 	flag.Parse()
+
+	   // Print environment summary
+	   fmt.Println("\n==[ System Environment Check ]==")
+	   for _, status := range envcheck.CheckAll() {
+		   if status.Found {
+			   if status.Warn != "" {
+				   fmt.Printf("[WARN] %-8s %s (%s)\n", status.Name+":", status.Version, status.Warn)
+			   } else {
+				   fmt.Printf("[OK]   %-8s %s\n", status.Name+":", status.Version)
+			   }
+		   } else {
+			   fmt.Printf("[MISS] %-8s %s\n", status.Name+":", status.Warn)
+		   }
+	   }
+	   fmt.Println()
+
+	   // Run project-local plugins (devdoctor.d/)
+	   pluginResults := plugin.RunAllPlugins(path)
+	   if len(pluginResults) > 0 {
+		   fmt.Println("==[ Custom DevDoctor Plugins ]==")
+		   for _, pr := range pluginResults {
+			   if pr.Err != nil {
+				   fmt.Printf("[FAIL] %s: %v\n", pr.Name, pr.Err)
+			   } else {
+				   fmt.Printf("[PLUGIN] %s:\n%s\n", pr.Name, pr.Output)
+			   }
+		   }
+		   fmt.Println()
+	   }
 
 	if showVersion {
 		fmt.Println("DevDoctor", version)
