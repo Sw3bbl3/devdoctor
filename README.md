@@ -12,11 +12,76 @@ DevDoctor is a tiny, cross-platform CLI that diagnoses why a freshly cloned proj
 
 ## Installation
 
+### Quick Setup (Recommended)
+
+The easiest way to get started is using our automated setup script that installs Go and builds DevDoctor:
+
+**Windows (PowerShell):**
+```powershell
+# Clone and setup
+git clone https://github.com/Sw3bbl3/devdoctor.git
+cd devdoctor
+
+# Run setup (PowerShell)
+.\setup.ps1
+
+# Or use the batch launcher
+setup.bat
+
+# Advanced options
+.\setup.ps1 -Verbose      # Show detailed progress
+.\setup.ps1 -Force        # Force reinstall Go
+.\setup.ps1 -SkipBuild    # Only install Go
+```
+
+**Windows (CMD):**
+```cmd
+git clone https://github.com/Sw3bbl3/devdoctor.git
+cd devdoctor
+setup.bat
+```
+
+**Linux/macOS:**
+```bash
+git clone https://github.com/Sw3bbl3/devdoctor.git
+cd devdoctor
+chmod +x setup.sh
+
+# Run setup
+./setup.sh
+
+# Advanced options
+./setup.sh --verbose      # Show detailed progress
+./setup.sh --force        # Force reinstall Go
+./setup.sh --skip-build   # Only install Go
+```
+
+The setup script will automatically:
+- ✅ Detect your operating system and architecture
+- ✅ Check for existing Go installation
+- ✅ Install Go using the best method available:
+  - Windows: winget → Chocolatey → MSI installer
+  - macOS: Homebrew → Manual download
+  - Linux: Manual download and extraction
+- ✅ Download and cache project dependencies
+- ✅ Build optimized DevDoctor binary
+- ✅ Verify installation and provide usage instructions
+
+**Features:**
+- 🎨 Beautiful terminal UI with progress indicators
+- 🔄 Automatic fallback to alternative installation methods
+- 📊 Real-time download progress with percentage and speed
+- ✔️ Version checking and requirement validation
+- 🔍 Verbose mode for troubleshooting
+- ⚡ Production-ready and developer-friendly
+
 ### Download Pre-built Binary
 
 Download the latest release from the [releases page](https://github.com/Sw3bbl3/devdoctor/releases).
 
-### Build from Source
+### Manual Build from Source
+
+If you already have Go installed:
 
 ```bash
 git clone https://github.com/Sw3bbl3/devdoctor.git
@@ -36,6 +101,14 @@ Or specify a path:
 
 ```bash
 devdoctor -path /path/to/project
+```
+
+### Version & Updates
+
+```bash
+devdoctor -version
+devdoctor -check-update
+devdoctor -update
 ```
 
 ## Example Output
