@@ -72,6 +72,11 @@ func isCommandAvailable(command string) bool {
 	return err == nil
 }
 
+func fileExists(path, filename string) bool {
+	_, err := os.Stat(filepath.Join(path, filename))
+	return err == nil
+}
+
 func getInstallSuggestion(tool string) string {
 	suggestions := map[string]string{
 		"node":   "Install Node.js from https://nodejs.org/ or use a version manager like nvm",
@@ -154,10 +159,7 @@ func checkPython(path string) []Issue {
 	}
 
 	// Check if requirements are installed
-	if fileExists := func(name string) bool {
-		_, err := os.Stat(filepath.Join(path, name))
-		return err == nil
-	}; fileExists("requirements.txt") {
+	if fileExists(path, "requirements.txt") {
 		issues = append(issues, Issue{
 			Severity:    SeverityInfo,
 			ProjectType: "Python",
