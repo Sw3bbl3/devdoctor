@@ -17,15 +17,47 @@ import (
 const version = "0.1.0"
 
 func main() {
-	var path string
-	var showVersion bool
-	var update bool
-	var checkUpdate bool
-	flag.StringVar(&path, "path", ".", "Path to the project directory to diagnose")
-	flag.BoolVar(&showVersion, "version", false, "Print DevDoctor version")
-	flag.BoolVar(&update, "update", false, "Update DevDoctor to the latest release")
-	flag.BoolVar(&checkUpdate, "check-update", false, "Check if a newer version is available")
-	flag.Parse()
+
+	       var path string
+	       var showVersion bool
+	       var update bool
+	       var checkUpdate bool
+	       var showHelp bool
+	       flag.StringVar(&path, "path", ".", "Path to the project directory to diagnose")
+	       flag.BoolVar(&showVersion, "version", false, "Print DevDoctor version")
+	       flag.BoolVar(&update, "update", false, "Update DevDoctor to the latest release")
+	       flag.BoolVar(&checkUpdate, "check-update", false, "Check if a newer version is available")
+	       flag.BoolVar(&showHelp, "help", false, "Show this help message")
+
+		       flag.Usage = func() {
+			       fmt.Println("\033[1;36m╔═══════════════════════════════════════════════════════════════╗\033[0m")
+			       fmt.Println("\033[1;36m║                         DEVDOCTOR                            ║\033[0m")
+			       fmt.Println("\033[1;36m║              Project Diagnostic CLI Tool                     ║\033[0m")
+			       fmt.Println("\033[1;36m╚═══════════════════════════════════════════════════════════════╝\033[0m\n")
+			       fmt.Println("Usage:")
+			       fmt.Println("  devdoctor [options]\n")
+			       fmt.Println("Options:")
+			       fmt.Println("  -path           Path to the project directory to diagnose (default: .)")
+			       fmt.Println("  -version        Print DevDoctor version")
+			       fmt.Println("  -check-update   Check if a newer version is available")
+			       fmt.Println("  -update         Update DevDoctor to the latest release")
+			       fmt.Println("  -help           Show this help message\n")
+			       fmt.Println("Examples:")
+			       fmt.Println("  devdoctor")
+			       fmt.Println("  devdoctor -path /path/to/project")
+			       fmt.Println("  devdoctor -check-update")
+			       fmt.Println("  devdoctor -update\n")
+			       fmt.Println("Supported Project Types:")
+			       fmt.Println("  Node.js, Python, Go, Java, Ruby, Rust, .NET, Docker\n")
+			       fmt.Println("For more info, see: https://github.com/Sw3bbl3/devdoctor\n")
+		       }
+
+	       flag.Parse()
+
+	       if showHelp {
+		       flag.Usage()
+		       return
+	       }
 
 	   // Print environment summary
 	   fmt.Println("\n==[ System Environment Check ]==")

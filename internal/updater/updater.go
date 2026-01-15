@@ -7,22 +7,24 @@ import (
 	"io"
 	"net/http"
 	"os"
-    "os/exec"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
-)
-func isGitRepo() bool {
-	_, err := os.Stat(".git")
-	return err == nil
-}
+	"syscall"
+	)
 
-func gitPull() error {
-	cmd := exec.Command("git", "pull")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	func isGitRepo() bool {
+		_, err := os.Stat(".git")
+		return err == nil
+	}
+
+	func gitPull() error {
+		cmd := exec.Command("git", "pull")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 }
 
 func goBuildLocal() error {
@@ -237,52 +239,89 @@ func UpdateToLatest(currentVersion string) (string, error) {
 		}
 		return dest, nil
 	}
+       
+		       // Only do smart self-replace if we downloaded a new binary (not for git/local build)
+		       if !isGitRepo() {
+			       gr, err := latestRelease()
+			       if err != nil {
+				       // Fallback: install from source
+				       cmd := exec.Command("go", "install", fmt.Sprintf("github.com/%s/%s/cmd/%s@latest", RepoOwner, RepoName, RepoName))
+				       cmd.Stdout = os.Stdout
+				       cmd.Stderr = os.Stderr
+				       if err := cmd.Run(); err != nil {
+					       return "", err
+				       }
+				       dest, derr := destinationPath()
+				       if derr != nil {
+					       return "", derr
+				       }
+				       return dest, nil
+			       }
+			       remote := strings.TrimPrefix(gr.TagName, "v")
+			       if remote == currentVersion {
+				       return "", fmt.Errorf("already up to date: %s", remote)
+			       }
+			       asset, err := selectAsset(gr.Assets)
+			       if err != nil {
+				       return "", err
+			       }
+			       tmp, err := os.CreateTemp("", "devdoctor-update-*")
+			       if err != nil {
+				       return "", err
+			       }
+			       tmpPath := tmp.Name()
+			       tmp.Close()
+			       if err := downloadWithProgress(asset.BrowserDownloadURL, tmpPath); err != nil {
+				       return "", err
+			       }
+			       if runtime.GOOS != "windows" {
+				       _ = os.Chmod(tmpPath, 0755)
+			       }
+			       fmt.Println("[INFO] Launching updated DevDoctor and exiting...")
+			       if err := smartReplaceAndRun(tmpPath); err != nil {
+				       return "", err
+			       }
+			       return "", nil
+		       }
+		       // If we got here, it was a git/local build path
+		       return "", nil
+	}
 
-	gr, err := latestRelease()
-	if err != nil {
-		// Fallback: install from source
-		cmd := exec.Command("go", "install", fmt.Sprintf("github.com/%s/%s/cmd/%s@latest", RepoOwner, RepoName, RepoName))
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			return "", err
-		}
-		dest, derr := destinationPath()
-		if derr != nil {
-			return "", derr
-		}
-		return dest, nil
-	}
-	remote := strings.TrimPrefix(gr.TagName, "v")
-	if remote == currentVersion {
-		return "", fmt.Errorf("already up to date: %s", remote)
-	}
-	asset, err := selectAsset(gr.Assets)
-	if err != nil {
-		return "", err
-	}
-	tmp, err := os.CreateTemp("", "devdoctor-update-*")
-	if err != nil {
-		return "", err
-	}
-	tmpPath := tmp.Name()
-	tmp.Close()
-	if err := downloadWithProgress(asset.BrowserDownloadURL, tmpPath); err != nil {
-		return "", err
-	}
-	dest, err := destinationPath()
-	if err != nil {
-		return "", err
-	}
-	if runtime.GOOS != "windows" {
-		_ = os.Chmod(tmpPath, 0755)
-	}
-	if err := os.Rename(tmpPath, dest); err != nil {
-		fallback := dest + ".new"
-		if ferr := os.Rename(tmpPath, fallback); ferr != nil {
-			return "", err
-		}
-		return fmt.Sprintf("downloaded to %s; replace existing binary after exit", fallback), nil
-	}
-	return dest, nil
+	// smartReplaceAndRun replaces the current executable with the new one and runs it, then exits the current process.
+	// On Windows, uses a temporary batch file to handle replacement after exit.
+	func smartReplaceAndRun(newExePath string) error {
+	       exe, err := os.Executable()
+	       if err != nil {
+		       return err
+	       }
+	       if runtime.GOOS == "windows" {
+		       bat := exe + ".update.bat"
+		       f, err := os.Create(bat)
+		       if err != nil {
+			       return err
+		       }
+		       defer f.Close()
+		       // Batch script: wait, replace, run, delete self
+		       script := fmt.Sprintf(`
+	@echo off
+	ping 127.0.0.1 -n 2 > nul
+	move /Y "%s" "%s"
+	start "" "%s"
+	del "%%~f0"
+	`, newExePath, exe, exe)
+		       f.WriteString(script)
+		       f.Close()
+		       // Launch the batch file and exit
+		       cmd := exec.Command("cmd", "/C", bat)
+		       cmd.Start()
+		       os.Exit(0)
+		       return nil
+		       } else {
+			       // Unix: move and exec
+			       err := os.Rename(newExePath, exe)
+			       if err != nil {
+				       return err
+			       }
+			       return syscall.Exec(exe, os.Args, os.Environ())
+		       }
 }

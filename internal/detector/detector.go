@@ -44,6 +44,7 @@ func (r *DetectorRegistry) registerDetectors() {
 	   detectScala,
 	   detectDartFlutter,
    }
+}
 func detectPHP(path string) *ProjectType {
    if fileExists(path, "composer.json") {
 	   return &ProjectType{
@@ -144,14 +145,13 @@ func detectDartFlutter(path string) *ProjectType {
 		   RequiredTools: tools,
 	   }
    }
-   return nil
-}
-}
+		return nil
+	}
 
-// Detect scans the directory and returns all detected project types
-func (r *DetectorRegistry) Detect(path string) []*ProjectType {
-	var projects []*ProjectType
-	for _, detector := range r.detectors {
+	// Detect scans the directory and returns all detected project types
+	func (r *DetectorRegistry) Detect(path string) []*ProjectType {
+		var projects []*ProjectType
+		for _, detector := range r.detectors {
 		if project := detector(path); project != nil {
 			projects = append(projects, project)
 		}
